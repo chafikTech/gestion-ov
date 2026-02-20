@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Ouvriers Occasionnels</title>
+    <script>
+        tailwind = {
+            config: {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        colors: {
+                            brand: {
+                                50: '#eef2ff',
+                                100: '#e0e7ff',
+                                200: '#c7d2fe',
+                                300: '#a5b4fc',
+                                400: '#818cf8',
+                                500: '#6366f1',
+                                600: '#4f46e5',
+                                700: '#4338ca',
+                                800: '#3730a3',
+                                900: '#312e81'
+                            }
+                        },
+                        fontFamily: {
+                            display: ['"Sora"', 'system-ui', 'sans-serif'],
+                            sans: ['"IBM Plex Sans"', 'system-ui', 'sans-serif']
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Sora:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="h-full bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+    <div class="app-shell">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-top">
+                <div class="logo-block">
+                    <div class="logo-icon">
+                        <img src="images/commune-logo.png" alt="Logo Commune Ouled Naceur" class="logo-mark">
+                    </div>
+                    <div class="logo-text">
+                        <div class="logo-title">Gestion Ouvriers</div>
+                        <div class="logo-sub">Plateforme administrative</div>
+                    </div>
+                    <button id="sidebar-toggle" class="icon-btn" title="Réduire">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M15 6l-6 6 6 6"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <nav class="nav-menu">
+                <button class="nav-btn active" data-page="dashboard">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12l2-2 4 4 8-8 4 4"/>
+                    </svg>
+                    <span>Dashboard</span>
+                </button>
+                <button class="nav-btn" data-page="workers">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    <span>Ouvriers</span>
+                </button>
+                <button class="nav-btn" data-page="presence">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    <span>Présences</span>
+                </button>
+                <button class="nav-btn" data-page="documents">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                    <span>Documents</span>
+                </button>
+                <button class="nav-btn" data-page="settings">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33h.09A1.65 1.65 0 0 0 9 3.09V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09A1.65 1.65 0 0 0 20.91 11H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                    <span>Paramètres</span>
+                </button>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="topbar">
+                <div class="breadcrumb">
+                    <span class="crumb">Accueil</span>
+                    <span class="crumb-sep">/</span>
+                    <span id="page-title" class="crumb-current">Dashboard</span>
+                </div>
+                <div class="topbar-actions">
+                    <div class="search-field">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input id="header-search" type="text" placeholder="Rechercher un ouvrier (Ctrl+K)" />
+                    </div>
+                    <button id="add-worker-btn" class="btn-primary">Ajouter un ouvrier</button>
+                    <button id="quick-generate-docs" class="btn-secondary">Générer documents</button>
+                </div>
+            </header>
+
+            <!-- Page: Dashboard -->
+            <div id="dashboard-page" class="page active">
+                <section class="grid-cards">
+                    <div class="card">
+                        <div class="card-label">Total Ouvriers</div>
+                        <div class="card-value" id="dash-total-workers">0</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">Présents Aujourd'hui</div>
+                        <div class="card-value" id="dash-present-today">0</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">Paie du Mois</div>
+                        <div class="card-value" id="dash-total-payroll">0.00 DH</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">Documents générés</div>
+                        <div class="card-value" id="dash-docs-count">0</div>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <div class="card-header">
+                        <h3>Activité récente</h3>
+                    </div>
+                    <div id="recent-activity" class="empty-state">
+                        <div class="empty-icon">🗂️</div>
+                        <div>Aucune génération récente</div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Page: Workers -->
+            <div id="workers-page" class="page">
+                <div class="section-header">
+                    <div>
+                        <h2>Gestion des Ouvriers</h2>
+                        <p class="section-sub">Suivi des profils, types et salaires journaliers.</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="filters">
+                        <div class="search-field wide">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                            <input type="text" id="worker-search" placeholder="Rechercher par nom ou CIN...">
+                        </div>
+                        <button id="search-btn" class="btn-secondary">Rechercher</button>
+                        <button id="clear-search-btn" class="btn-ghost">Effacer</button>
+                    </div>
+
+                    <div class="stats-row">
+                        <div class="stat-pill">
+                            <span>Total</span>
+                            <strong id="total-workers">0</strong>
+                        </div>
+                        <div class="stat-pill">
+                            <span>OS</span>
+                            <strong id="os-workers">0</strong>
+                        </div>
+                        <div class="stat-pill">
+                            <span>ONS</span>
+                            <strong id="ons-workers">0</strong>
+                        </div>
+                    </div>
+
+                    <div class="table-shell">
+                        <table id="workers-table" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nom et Prénom</th>
+                                    <th>CIN</th>
+                                    <th>Date de Naissance</th>
+                                    <th>Âge</th>
+                                    <th>Type</th>
+                                    <th>Salaire Journalier</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="workers-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page: Presence -->
+            <div id="presence-page" class="page">
+                <div class="section-header">
+                    <div>
+                        <h2>Gestion des Présences</h2>
+                        <p class="section-sub">Sélectionnez un ouvrier et saisissez les jours travaillés.</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="presence-worker">Ouvrier</label>
+                            <select id="presence-worker" class="form-select">
+                                <option value="">Sélectionner un ouvrier...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="presence-month">Mois</label>
+                            <select id="presence-month" class="form-select">
+                                <option value="1">Janvier</option>
+                                <option value="2">Février</option>
+                                <option value="3">Mars</option>
+                                <option value="4">Avril</option>
+                                <option value="5">Mai</option>
+                                <option value="6">Juin</option>
+                                <option value="7">Juillet</option>
+                                <option value="8">Août</option>
+                                <option value="9">Septembre</option>
+                                <option value="10">Octobre</option>
+                                <option value="11">Novembre</option>
+                                <option value="12">Décembre</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="presence-year">Année</label>
+                            <input type="number" id="presence-year" class="form-input" min="2020" max="2100" value="2026">
+                        </div>
+                        <div class="form-group actions">
+                            <button id="load-presence-btn" class="btn-primary">Charger</button>
+                            <button id="save-presence-btn" class="btn-success">Enregistrer</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="presence-input-header">
+                        <div>
+                            <h3>N° F. d’attach (ordre)</h3>
+                            <p class="section-sub">Définissez l’ordre des ouvriers pour ce mois. Les valeurs vides passent à la fin.</p>
+                        </div>
+                    </div>
+                    <div class="table-shell">
+                        <table id="presence-attach-table" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Ouvrier</th>
+                                    <th>CIN</th>
+                                    <th>Type</th>
+                                    <th>N° F. d’attach</th>
+                                </tr>
+                            </thead>
+                            <tbody id="presence-attach-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="worker-info" class="card" style="display: none;">
+                    <h3 id="worker-info-name"></h3>
+                    <p><strong>Type:</strong> <span id="worker-info-type"></span></p>
+                    <p><strong>Salaire Journalier:</strong> <span id="worker-info-salary"></span> DH</p>
+                </div>
+
+                <div id="calendar-container" class="card" style="display: none;">
+                    <div class="presence-input-header">
+                        <div>
+                            <h3>Jours travaillés</h3>
+                            <p class="section-sub">Saisissez les jours travaillés pour chaque demi-mois.</p>
+                        </div>
+                    </div>
+                    <div class="presence-input-row">
+                        <div class="presence-input-group">
+                            <label for="presence-days-input-first">Du 1 au 15</label>
+                            <input id="presence-days-input-first" class="form-input presence-days-input" type="number" min="0" step="1" placeholder="Ex: 10">
+                        </div>
+                        <div class="presence-input-group">
+                            <label for="presence-days-input-second">Du 16 à la fin</label>
+                            <input id="presence-days-input-second" class="form-input presence-days-input" type="number" min="0" step="1" placeholder="Ex: 8">
+                        </div>
+                        <div class="presence-input-meta">
+                            <div class="presence-meta-item">
+                                <span class="meta-label">Max 1-15</span>
+                                <span id="presence-max-days-first" class="meta-value">15</span>
+                            </div>
+                            <div class="presence-meta-item">
+                                <span class="meta-label">Max 16-fin</span>
+                                <span id="presence-max-days-second" class="meta-value">16</span>
+                            </div>
+                            <div class="presence-meta-item">
+                                <span class="meta-label">Total saisi</span>
+                                <span id="presence-days-count" class="meta-value">0</span>
+                            </div>
+                            <div class="presence-meta-item">
+                                <span class="meta-label">Jours max</span>
+                                <span id="presence-max-days" class="meta-value">31</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="presence-stats" class="grid-cards" style="display: none;">
+                    <div class="card">
+                        <div class="card-label">Jours travaillés</div>
+                        <div class="card-value" id="days-worked">0</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">Salaire total</div>
+                        <div class="card-value" id="total-salary">0.00 DH</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page: Documents -->
+            <div id="documents-page" class="page">
+                <div class="section-header">
+                    <div>
+                        <h2>Génération de documents</h2>
+                        <p class="section-sub">Sélectionnez la période et lancez la génération en un clic.</p>
+                    </div>
+                </div>
+
+                <div class="card stepper">
+                    <div class="step">
+                        <div class="step-index">1</div>
+                        <div>
+                            <h3>Période</h3>
+                            <p>Choisissez mensuel ou trimestriel</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-index">2</div>
+                        <div>
+                            <h3>Documents</h3>
+                            <p>Choisissez les modèles à générer</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-index">3</div>
+                        <div>
+                            <h3>Génération</h3>
+                            <p>Déclenchez la sortie DOCX</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="document-controls">
+                        <div class="form-group">
+                            <label>Type de Document</label>
+                            <div class="radio-group">
+                                <label class="radio-label">
+                                    <input type="radio" name="doc-period" value="monthly" checked>
+                                    <span>Documents Mensuels</span>
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="doc-period" value="quarterly">
+                                    <span>Documents Trimestriels</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="documents-format">Format</label>
+                            <input id="documents-format" class="form-input" type="text" value="DOCX" disabled>
+                        </div>
+                    </div>
+
+                    <div id="monthly-docs-section" class="docs-section">
+                        <h3>Documents Mensuels</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="monthly-month">Mois</label>
+                                <select id="monthly-month" class="form-select">
+                                    <option value="1">Janvier</option>
+                                    <option value="2">Février</option>
+                                    <option value="3">Mars</option>
+                                    <option value="4">Avril</option>
+                                    <option value="5">Mai</option>
+                                    <option value="6">Juin</option>
+                                    <option value="7">Juillet</option>
+                                    <option value="8">Août</option>
+                                    <option value="9">Septembre</option>
+                                    <option value="10">Octobre</option>
+                                    <option value="11">Novembre</option>
+                                    <option value="12">Décembre</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="monthly-year">Année</label>
+                                <input type="number" id="monthly-year" class="form-input" min="2020" max="2100" value="2026">
+                            </div>
+                        </div>
+
+                        <div id="monthly-workers-info" class="card info-panel" style="display: none;">
+                            <strong>📊 Ouvriers avec présence pour cette période:</strong>
+                            <div id="monthly-workers-list" class="info-panel__list"></div>
+                        </div>
+
+                        <div class="docs-grid">
+                            <button class="btn doc-btn-individual" data-doc="depense-regie-salaire" >Dépense en Régie - Salaire</button>
+                            <button class="btn doc-btn-individual" data-doc="recu-combined">Reçu (Total)</button>
+                            <button class="btn doc-btn-individual" data-doc="demande-autorisation">Demande d'Autorisation</button>
+                            <button class="btn doc-btn-individual" data-doc="certificat-paiement">Certificat de Paiement</button>
+                            <button class="btn doc-btn-individual" data-doc="ordre-paiement">Ordre de Paiement</button>
+                            <button class="btn doc-btn-individual" data-doc="mandat-paiement">Mandat de Paiement</button>
+                            <button class="btn doc-btn-individual" data-doc="bordereau">Bordereau</button>
+                            <button class="btn btn-primary doc-btn-individual" data-doc="all">Générer tous les documents</button>
+                        </div>
+                    </div>
+
+                    <div id="quarterly-docs-section" class="docs-section" style="display: none;">
+                        <h3>Documents Trimestriels</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="quarterly-quarter">Trimestre</label>
+                                <select id="quarterly-quarter" class="form-select">
+                                    <option value="1">1er Trimestre (Jan-Fév-Mar)</option>
+                                    <option value="2">2ème Trimestre (Avr-Mai-Juin)</option>
+                                    <option value="3">3ème Trimestre (Juil-Aoû-Sep)</option>
+                                    <option value="4">4ème Trimestre (Oct-Nov-Déc)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="quarterly-year">Année</label>
+                                <input type="number" id="quarterly-year" class="form-input" min="2020" max="2100" value="2026">
+                            </div>
+                        </div>
+
+                        <div id="quarterly-workers-info" class="card info-panel">
+                            <strong>📊 Ouvriers avec présence pour cette période:</strong>
+                            <div id="quarterly-workers-list" class="info-panel__list"></div>
+                        </div>
+
+                        <div class="callout">
+                            <p class="callout-title">Mode de génération: Document combiné RCAR</p>
+                            <p>Le système génère automatiquement un document RCAR contenant tous les ouvriers de la période.</p>
+                        </div>
+
+                        <button id="generate-combined-quarterly" class="btn btn-primary">Générer le document RCAR trimestriel</button>
+                    </div>
+
+                    <div id="generation-status" class="status-message" style="display: none;"></div>
+                </div>
+            </div>
+
+            <!-- Page: Settings -->
+            <div id="settings-page" class="page">
+                <div class="section-header">
+                    <div>
+                        <h2>Paramètres</h2>
+                        <p class="section-sub">Configuration des informations administratives et RCAR.</p>
+                    </div>
+                </div>
+
+	                <div class="card">
+	                    <div class="form-grid">
+	                        <div class="form-group">
+	                            <label>Numéro d'adhésion RCAR</label>
+	                            <input type="text" class="form-input" id="settings-rcar" placeholder="35160001">
+	                        </div>
+                        <div class="form-group">
+                            <label>Âge limite RCAR (retenue 6%)</label>
+                            <input type="number" class="form-input" id="settings-rcar-age-limit" placeholder="64" min="0" max="120" step="1" title="La retenue 6% est appliquée si l’âge est ≤ à cette valeur.">
+                        </div>
+                        <div class="form-group">
+                            <label>Numéro de décision</label>
+                            <input type="text" class="form-input" id="settings-decision-number" placeholder="02/2024">
+                        </div>
+                        <div class="form-group">
+                            <label>Date de décision</label>
+                            <input type="text" class="form-input" id="settings-decision-date" placeholder="02/02/2024">
+                        </div>
+                        <div class="form-group">
+                            <label>Chapitre</label>
+                            <input type="text" class="form-input" id="settings-chap" placeholder="10">
+                        </div>
+                        <div class="form-group">
+                            <label>Article</label>
+                            <input type="text" class="form-input" id="settings-art" placeholder="20">
+                        </div>
+                        <div class="form-group">
+                            <label>Programme</label>
+                            <input type="text" class="form-input" id="settings-prog" placeholder="20">
+                        </div>
+                        <div class="form-group">
+                            <label>Projet</label>
+                            <input type="text" class="form-input" id="settings-proj" placeholder="10">
+                        </div>
+                        <div class="form-group">
+                            <label>Ligne</label>
+                            <input type="text" class="form-input" id="settings-ligne" placeholder="14">
+                        </div>
+                        <div class="form-group actions">
+                            <button class="btn-primary" id="settings-save">Enregistrer</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="section-header">
+                        <div>
+                            <h3>Sauvegarde de la base de données</h3>
+                            <p class="section-sub">Exporter ou importer un fichier .db.</p>
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group actions">
+                            <button class="btn-secondary" id="db-export-btn">Exporter la base</button>
+                            <button class="btn-danger" id="db-import-btn">Importer la base</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for Add/Edit Worker -->
+    <div id="worker-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Ajouter un Ouvrier</h3>
+                <button class="close-btn" id="close-modal">&times;</button>
+            </div>
+            <form id="worker-form">
+                <div class="form-group">
+                    <label for="worker-nom-prenom">Nom et Prénom *</label>
+                    <input type="text" id="worker-nom-prenom" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="worker-cin">CIN *</label>
+                    <input type="text" id="worker-cin" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="worker-cin-validite">Validité CIN (AU)</label>
+                    <input type="date" id="worker-cin-validite" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="worker-date-naissance">Date de Naissance *</label>
+                    <input type="date" id="worker-date-naissance" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="worker-type">Type *</label>
+                    <select id="worker-type" class="form-select" required>
+                        <option value="">Sélectionner...</option>
+                        <option value="OS">OS - Ouvrier Spécialisé (100.40 DH/jour)</option>
+                        <option value="ONS">ONS - Ouvrier Non Spécialisé (93.00 DH/jour)</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancel-btn">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+        <div class="spinner"></div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="js/workers.js"></script>
+    <script src="js/presence.js"></script>
+    <script src="js/documents.js"></script>
+    <script src="js/settings.js"></script>
+</body>
+</html>

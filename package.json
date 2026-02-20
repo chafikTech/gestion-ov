@@ -1,0 +1,96 @@
+{
+  "name": "gestion-ouvriers-occasionnels",
+  "version": "1.0.0",
+  "description": "Administrative Management System for Occasional Workers and Official Document Generation",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node scripts/run-electron.js .",
+    "dev": "node scripts/run-electron.js . --dev",
+    "build:py": "node scripts/build-python-backend.js",
+    "copy:py": "node scripts/copy-python-backend.js",
+    "build:all": "npm run build:py && npm run copy:py",
+    "build": "electron-builder",
+    "check:win-backend": "node scripts/assert-windows-backend.js",
+    "build:win": "npm run check:win-backend && electron-builder --win --x64",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux",
+    "dist": "npm run build:win",
+    "prepare:python-bundle": "node scripts/prepare-bundled-python.js",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "keywords": [
+    "electron",
+    "workers",
+    "management",
+    "administrative",
+    "pdf"
+  ],
+  "author": "Gestion des Ouvriers Occasionnels",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.2.2"
+  },
+  "build": {
+    "appId": "com.gestion.ouvriers",
+    "productName": "Gestion des Ouvriers Occasionnels",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "icon/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "runtime",
+        "to": "runtime",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "resources/bin/mybackend",
+        "to": "bin/mybackend",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "asarUnpack": [
+      "**/*.node",
+      "**/*.py",
+      "**/*.docx",
+      "**/*.ttf"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "icon/app.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "icon/11965535.png"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "icon/11965535.png"
+    }
+  }
+}

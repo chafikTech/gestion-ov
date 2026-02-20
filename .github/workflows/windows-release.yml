@@ -1,0 +1,81 @@
+name: Windows Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  windows-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node (from .nvmrc)
+        if: ${{ hashFiles('.nvmrc') != '' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Setup Node (20 fallback)
+        if: ${{ hashFiles('.nvmrc') == '' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Setup Python (from .python-version)
+        if: ${{ hashFiles('.python-version') != '' }}
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+          cache: pip
+
+      - name: Setup Python (3.11 fallback)
+        if: ${{ hashFiles('.python-version') == '' }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install backend Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r backend/requirements.txt
+
+      - name: Build Python backend executable
+        env:
+          PYI_MODE: onedir
+        run: npm run build:py
+
+      - name: Copy backend executable into Electron resources
+        run: npm run copy:py
+
+      - name: Build Windows installer
+        run: npm run dist
+
+      - name: Upload Windows installer artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          if-no-files-found: warn
+          path: |
+            dist/*.exe
+            !dist/mybackend.exe
+            dist/*.msi
+            dist/*.zip
+            dist/*.yml
+
+      - name: Upload unpacked app folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-unpacked
+          if-no-files-found: warn
+          path: dist/win-unpacked/**

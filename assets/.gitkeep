@@ -1,0 +1,11 @@
+# Assets Folder
+
+Place your logo and images here:
+- logo.png (recommended: 300x240 pixels, transparent background)
+- cachet.png (optional: stamp/seal image)
+
+Example structure:
+assets/
+  ├── logo.png
+  ├── cachet.png
+  └── .gitkeep

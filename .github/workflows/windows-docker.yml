@@ -1,0 +1,34 @@
+name: Windows build (Docker + Wine)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  win_build_docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -t gov-win-builder -f build/windows/Dockerfile .
+
+      - name: Run Windows build inside container
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
+            gov-win-builder \
+            bash -lc "./build/windows/build-win.sh"
+
+      - name: Upload dist artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer-docker
+          path: |
+            dist/**

@@ -14,44 +14,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Ensure npm lock file exists
-        shell: bash
+      - name: Ensure lock file exists
+        shell: cmd
         run: |
-          if [ ! -f package-lock.json ]; then
-            echo "ERROR: package-lock.json is required for CI builds."
-            exit 1
-          fi
+          if not exist package-lock.json (
+            echo ERROR: package-lock.json is required for CI builds.
+            exit /b 1
+          )
 
-      - name: Setup Node (from .nvmrc)
-        if: ${{ hashFiles('.nvmrc') != '' }}
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version-file: .nvmrc
-          cache: npm
-
-      - name: Setup Node (20 fallback)
-        if: ${{ hashFiles('.nvmrc') == '' }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
+          node-version: 20
+          cache: 'npm'
 
       - name: Install Node dependencies
         run: npm ci
 
-      - name: Setup Python (from .python-version)
-        if: ${{ hashFiles('.python-version') != '' }}
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version-file: .python-version
-          cache: pip
-
-      - name: Setup Python (3.11 fallback)
-        if: ${{ hashFiles('.python-version') == '' }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: pip
+          python-version: '3.11'
 
       - name: Install backend Python dependencies
         run: |
@@ -63,8 +46,19 @@ jobs:
           PYI_MODE: onedir
         run: npm run build:py
 
+      - name: Verify Windows backend executable exists
+        shell: cmd
+        run: |
+          if not exist dist\mybackend\mybackend.exe (
+            echo ERROR: Windows backend executable not found.
+            exit /b 1
+          )
+
       - name: Copy backend executable into Electron resources
         run: npm run copy:py
+
+      - name: Verify backend binary format (PE, not ELF)
+        run: npm run check:win-backend
 
       - name: Build Windows installer
         run: npm run dist
@@ -76,10 +70,6 @@ jobs:
           if-no-files-found: warn
           path: |
             dist/*.exe
-            !dist/mybackend.exe
-            dist/*.msi
-            dist/*.zip
-            dist/*.yml
 
       - name: Upload unpacked app folder
         uses: actions/upload-artifact@v4

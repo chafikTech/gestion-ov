@@ -54,6 +54,22 @@ CREATE TABLE IF NOT EXISTS generated_documents (
     FOREIGN KEY (worker_id) REFERENCES workers(id) ON DELETE CASCADE
 );
 
+-- Monthly bordereau totals history (for report/carry-over logic)
+CREATE TABLE IF NOT EXISTS bordereau_monthly_totals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    year INTEGER NOT NULL,
+    month INTEGER NOT NULL CHECK(month >= 1 AND month <= 12),
+    present_amount REAL NOT NULL DEFAULT 0,
+    admitted_amount REAL NOT NULL DEFAULT 0,
+    report_previous REAL NOT NULL DEFAULT 0,
+    rejected_amount REAL NOT NULL DEFAULT 0,
+    total_general REAL NOT NULL DEFAULT 0,
+    file_path TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(year, month)
+);
+
 -- Application settings (key/value)
 CREATE TABLE IF NOT EXISTS app_settings (
     key TEXT PRIMARY KEY,
@@ -69,6 +85,7 @@ CREATE INDEX IF NOT EXISTS idx_presence_attach_worker_period ON presence_attachm
 CREATE INDEX IF NOT EXISTS idx_presence_attach_period ON presence_attachment_orders(year, month);
 CREATE INDEX IF NOT EXISTS idx_documents_worker ON generated_documents(worker_id);
 CREATE INDEX IF NOT EXISTS idx_documents_period ON generated_documents(year, month, quarter);
+CREATE INDEX IF NOT EXISTS idx_bordereau_period ON bordereau_monthly_totals(year, month);
 
 -- Trigger to update updated_at timestamp on workers
 CREATE TRIGGER IF NOT EXISTS update_workers_timestamp 
@@ -89,4 +106,11 @@ CREATE TRIGGER IF NOT EXISTS update_presence_attachment_orders_timestamp
 AFTER UPDATE ON presence_attachment_orders
 BEGIN
     UPDATE presence_attachment_orders SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
+
+-- Trigger to update updated_at timestamp on bordereau totals
+CREATE TRIGGER IF NOT EXISTS update_bordereau_monthly_totals_timestamp
+AFTER UPDATE ON bordereau_monthly_totals
+BEGIN
+    UPDATE bordereau_monthly_totals SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;

@@ -10,6 +10,7 @@ const {
 } = require('./presence');
 const { getMonthsInQuarter, RCAR_AGE_LIMIT, RCAR_RATE, calculateAgeAt, getMonthHalfRanges, calculatePresenceStatsForRange } = require('./constants');
 const { getAppSettings } = require('./settingsStore');
+const bordereauStore = require('./bordereauStore');
 const pythonBridge = require('./pythonBridge');
 
 // Role des journées (special-case: exact scanned template via src/python/generate_role.py)
@@ -47,6 +48,102 @@ function buildGeneratorOptions(userOptions = {}) {
     ...userOptions,
     // Force DOCX even if the UI passes something else
     format: 'docx'
+  };
+}
+
+function roundMoney(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return 0;
+  }
+  return Math.round(numeric * 100) / 100;
+}
+
+function readOptionalMoney(value) {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return null;
+  }
+  return roundMoney(numeric);
+}
+
+function readNonNegativeMoney(value, fallback = 0) {
+  const parsed = readOptionalMoney(value);
+  if (parsed === null) {
+    return roundMoney(fallback);
+  }
+  return parsed < 0 ? 0 : parsed;
+}
+
+function resolveEffectiveRcarAgeLimit(rcarAgeLimit) {
+  const parsed = Number(rcarAgeLimit);
+  return Number.isFinite(parsed) ? parsed : RCAR_AGE_LIMIT;
+}
+
+function computeMonthlyNetTotalFromRows(rows, year, month, rcarAgeLimit) {
+  const reportRows = Array.isArray(rows) ? rows : [];
+  const ranges = getMonthHalfRanges(year, month);
+  const rangeEndDate = new Date(year, month - 1, ranges.combined.endDay);
+  const effectiveAgeLimit = resolveEffectiveRcarAgeLimit(rcarAgeLimit);
+
+  const totalCents = reportRows.reduce((sumCents, worker) => {
+    const stats = calculatePresenceStatsForRange(
+      worker.presenceDays,
+      worker.salaire_journalier,
+      ranges.combined.startDay,
+      ranges.combined.endDay
+    );
+    const gross = Number(stats.totalSalary || 0);
+    if (gross <= 0) return sumCents;
+
+    const grossCents = Math.round(gross * 100);
+    const age = calculateAgeAt(worker.date_naissance, rangeEndDate);
+    const applyDeduction = age === null || age <= effectiveAgeLimit;
+    const deductionCents = applyDeduction ? Math.round(grossCents * RCAR_RATE) : 0;
+    return sumCents + (grossCents - deductionCents);
+  }, 0);
+
+  return totalCents / 100;
+}
+
+function resolveBordereauGenerationData({ year, month, reportRows, options }) {
+  const currentNetTotal = roundMoney(
+    computeMonthlyNetTotalFromRows(reportRows, year, month, options?.rcarAgeLimit)
+  );
+
+  if (currentNetTotal <= 0) {
+    throw new Error('Aucune donnée de paie pour cette période');
+  }
+
+  const explicitReportPrevious = readOptionalMoney(options?.reportPreviousBordereau);
+  const reportPrevious = explicitReportPrevious === null
+    ? bordereauStore.getPreviousTotalGeneral(year, month)
+    : Math.max(0, explicitReportPrevious);
+
+  const rejectedAmount = readNonNegativeMoney(options?.rejectedAmount, 0);
+  const explicitAdmittedAmount = readOptionalMoney(options?.admittedAmount);
+  const admittedAmount = explicitAdmittedAmount === null
+    ? roundMoney(Math.max(currentNetTotal - rejectedAmount, 0))
+    : Math.max(0, explicitAdmittedAmount);
+
+  const totalGeneral = roundMoney(reportPrevious + currentNetTotal - rejectedAmount);
+  const resolvedOptions = {
+    ...options,
+    reportPreviousBordereau: reportPrevious,
+    rejectedAmount,
+    admittedAmount
+  };
+
+  return {
+    options: resolvedOptions,
+    presentAmount: currentNetTotal,
+    admittedAmount,
+    reportPrevious,
+    rejectedAmount,
+    totalGeneral
   };
 }
 
@@ -194,7 +291,33 @@ async function generateMonthlyDocument(documentType, workerId, year, month) {
     return await roleJournees.generate({ report, year, month, options: generatorOptions });
   }
 
-  const py = await generateWithPython({ documentType, year, month, report, options: generatorOptions });
+  let optionsForGeneration = generatorOptions;
+  let bordereauData = null;
+  if (documentType === 'bordereau') {
+    bordereauData = resolveBordereauGenerationData({
+      year,
+      month,
+      reportRows: report.rows,
+      options: generatorOptions
+    });
+    optionsForGeneration = bordereauData.options;
+  }
+
+  const py = await generateWithPython({ documentType, year, month, report, options: optionsForGeneration });
+
+  if (documentType === 'bordereau' && bordereauData) {
+    bordereauStore.upsertMonthlyTotals({
+      year,
+      month,
+      presentAmount: bordereauData.presentAmount,
+      admittedAmount: bordereauData.admittedAmount,
+      reportPrevious: bordereauData.reportPrevious,
+      rejectedAmount: bordereauData.rejectedAmount,
+      totalGeneral: bordereauData.totalGeneral,
+      filePath: py.docxFilePath
+    });
+  }
+
   return {
     success: true,
     docxFileName: py.docxFileName,
@@ -290,7 +413,33 @@ async function generateMonthlyDocumentBatch(documentType, year, month, outputDir
       return results;
     }
 
-    const py = await generateWithPython({ documentType, year, month, report, options: generatorOptions, outputDir });
+    let optionsForGeneration = generatorOptions;
+    let bordereauData = null;
+    if (documentType === 'bordereau') {
+      bordereauData = resolveBordereauGenerationData({
+        year,
+        month,
+        reportRows: report.rows,
+        options: generatorOptions
+      });
+      optionsForGeneration = bordereauData.options;
+    }
+
+    const py = await generateWithPython({ documentType, year, month, report, options: optionsForGeneration, outputDir });
+
+    if (documentType === 'bordereau' && bordereauData) {
+      bordereauStore.upsertMonthlyTotals({
+        year,
+        month,
+        presentAmount: bordereauData.presentAmount,
+        admittedAmount: bordereauData.admittedAmount,
+        reportPrevious: bordereauData.reportPrevious,
+        rejectedAmount: bordereauData.rejectedAmount,
+        totalGeneral: bordereauData.totalGeneral,
+        filePath: py.docxFilePath
+      });
+    }
+
     if (py.docxFileName) results.files.push(py.docxFileName);
     results.success = 1;
   } catch (error) {
@@ -351,32 +500,6 @@ async function generateCombinedMonthlyDocument(documentType, year, month, output
   const report = buildMonthlyReport(year, month);
   const generatorOptions = buildGeneratorOptions(options);
 
-  const computeCombinedNetTotal = () => {
-    const ranges = getMonthHalfRanges(year, month);
-    const rangeEndDate = new Date(year, month - 1, ranges.combined.endDay);
-    const effectiveAgeLimit = Number.isFinite(Number(generatorOptions.rcarAgeLimit))
-      ? Number(generatorOptions.rcarAgeLimit)
-      : RCAR_AGE_LIMIT;
-    const totalCents = report.rows.reduce((sumCents, worker) => {
-      const stats = calculatePresenceStatsForRange(
-        worker.presenceDays,
-        worker.salaire_journalier,
-        ranges.combined.startDay,
-        ranges.combined.endDay
-      );
-      const gross = Number(stats.totalSalary || 0);
-      if (gross <= 0) return sumCents;
-
-      const grossCents = Math.round(gross * 100);
-      const age = calculateAgeAt(worker.date_naissance, rangeEndDate);
-      const applyDeduction = age === null || age <= effectiveAgeLimit;
-      const deductionCents = applyDeduction ? Math.round(grossCents * RCAR_RATE) : 0;
-      const netCents = grossCents - deductionCents;
-      return sumCents + netCents;
-    }, 0);
-    return totalCents / 100;
-  };
-
   if (documentType === 'depense-regie-salaire-combined' || documentType === 'role-journees') {
     const originalDir = roleJournees.outputDir;
     if (outputDir) roleJournees.outputDir = outputDir;
@@ -393,7 +516,9 @@ async function generateCombinedMonthlyDocument(documentType, year, month, output
 
   const py = await generateWithPython({ documentType, year, month, report, options: generatorOptions, outputDir });
 
-  const combinedTotal = documentType === 'recu-combined' ? computeCombinedNetTotal() : null;
+  const combinedTotal = documentType === 'recu-combined'
+    ? computeMonthlyNetTotalFromRows(report.rows, year, month, generatorOptions.rcarAgeLimit)
+    : null;
 
   return {
     success: true,

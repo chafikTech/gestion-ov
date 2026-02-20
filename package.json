@@ -12,7 +12,7 @@
     "build": "electron-builder",
     "check:windows-paths": "node scripts/check-windows-paths.js",
     "check:win-backend": "node scripts/assert-windows-backend.js",
-    "build:win": "npm run check:win-backend && electron-builder --win --x64",
+    "build:win": "npm run check:win-backend && electron-builder --win --x64 --publish never",
     "build:mac": "electron-builder --mac",
     "build:linux": "electron-builder --linux",
     "dist": "npm run build:win",

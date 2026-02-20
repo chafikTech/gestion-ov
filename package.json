@@ -10,6 +10,7 @@
     "copy:py": "node scripts/copy-python-backend.js",
     "build:all": "npm run build:py && npm run copy:py",
     "build": "electron-builder",
+    "check:windows-paths": "node scripts/check-windows-paths.js",
     "check:win-backend": "node scripts/assert-windows-backend.js",
     "build:win": "npm run check:win-backend && electron-builder --win --x64",
     "build:mac": "electron-builder --mac",

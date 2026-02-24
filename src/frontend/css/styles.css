@@ -1091,8 +1091,26 @@ body::before {
     border-color: transparent !important;
 }
 
-#generate-combined-quarterly {
+#generate-combined-quarterly,
+.quarterly-generate-btn {
+    width: 100%;
+    min-height: 52px;
+    margin-top: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-weight: 700;
     color: #ffffff !important;
+    border: none !important;
+    background: linear-gradient(135deg, #0f766e, #125e79) !important;
+    box-shadow: 0 12px 22px rgba(15, 78, 89, 0.25);
+}
+
+#generate-combined-quarterly:hover,
+.quarterly-generate-btn:hover {
+    background: linear-gradient(135deg, #0c655f, #0f5168) !important;
+    transform: translateY(-1px);
 }
 
 @keyframes entrance {

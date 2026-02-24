@@ -24,8 +24,6 @@ async function loadAdministrativeSettings() {
         setInputValue('settings-proj', settings?.proj);
         setInputValue('settings-ligne', settings?.ligne);
         setInputValue('settings-rcar-age-limit', settings?.rcarAgeLimit);
-        setInputValue('settings-decision-number', settings?.decisionNumber);
-        setInputValue('settings-decision-date', settings?.decisionDate);
     } catch (error) {
         console.error('Load settings error:', error);
         window.appUtils?.showNotification?.('Erreur lors du chargement des paramètres', 'error');
@@ -48,9 +46,7 @@ function setupAdministrativeSettingsSaveButton() {
                 prog: getInputValue('settings-prog') || null,
                 proj: getInputValue('settings-proj') || null,
                 ligne: getInputValue('settings-ligne') || null,
-                rcarAgeLimit: ageLimitRaw ? Number.parseInt(ageLimitRaw, 10) : null,
-                decisionNumber: getInputValue('settings-decision-number') || null,
-                decisionDate: getInputValue('settings-decision-date') || null
+                rcarAgeLimit: ageLimitRaw ? Number.parseInt(ageLimitRaw, 10) : null
             };
 
             window.appUtils.showLoading();

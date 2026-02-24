@@ -138,7 +138,14 @@ class RoleJourneesGenerator {
         const grossSalary = this.round2(daysWorked * dailyRate);
         const deduction = this.calculateIgrDeduction(worker.date_naissance, sectionEndDate, grossSalary, options.rcarAgeLimit);
         const netSalary = this.round2(grossSalary - deduction);
-        const cinValidity = worker.cin_validite ? this.formatShortDate(new Date(worker.cin_validite)) : '';
+        const cinValidityRaw = worker.cin_validite;
+        let cinValidity = '';
+        if (cinValidityRaw) {
+          const parsedCinDate = this.parseDate(cinValidityRaw);
+          cinValidity = Number.isNaN(parsedCinDate.getTime())
+            ? this.normalizeDateInput(cinValidityRaw)
+            : this.formatShortDate(parsedCinDate);
+        }
 
         totalDays += daysWorked;
         totalGross += grossSalary;

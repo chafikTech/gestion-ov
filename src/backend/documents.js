@@ -10,6 +10,7 @@ const {
 } = require('./presence');
 const { getMonthsInQuarter, RCAR_AGE_LIMIT, RCAR_RATE, calculateAgeAt, getMonthHalfRanges, calculatePresenceStatsForRange } = require('./constants');
 const { getAppSettings } = require('./settingsStore');
+const appConfig = require('./config');
 const bordereauStore = require('./bordereauStore');
 const pythonBridge = require('./pythonBridge');
 
@@ -43,9 +44,26 @@ async function generateWithPython({ documentType, year, month, quarter, report, 
 
 function buildGeneratorOptions(userOptions = {}) {
   const appSettings = getAppSettings();
+  const decisionConfig = appConfig?.documents?.certificatPaiementDecision || {};
+  const currentYear = new Date().getFullYear();
+
+  function resolveYearTemplate(value, fallbackTemplate) {
+    const raw = String(value || fallbackTemplate).trim();
+    if (!raw) {
+      return String(fallbackTemplate).replaceAll('{year}', String(currentYear));
+    }
+    return raw.replaceAll('{year}', String(currentYear));
+  }
+
+  const configuredDecisionNumber = resolveYearTemplate(decisionConfig.number, '2/{year}');
+  const configuredDecisionDate = resolveYearTemplate(decisionConfig.date, '1/2/{year}');
+
   return {
     ...appSettings,
     ...userOptions,
+    // CERTIFICAT DE PAIEMENT decision reference is config-driven only (not user/monthly input).
+    decisionNumber: configuredDecisionNumber,
+    decisionDate: configuredDecisionDate,
     // Force DOCX even if the UI passes something else
     format: 'docx'
   };
@@ -83,6 +101,23 @@ function resolveEffectiveRcarAgeLimit(rcarAgeLimit) {
   return Number.isFinite(parsed) ? parsed : RCAR_AGE_LIMIT;
 }
 
+function buildBordereauScope(options = {}) {
+  const normalizedCommuneName = (options?.communeName || 'OULED NACEUR').toString().trim() || 'OULED NACEUR';
+  const normalizedCommuneId = (options?.communeId || normalizedCommuneName).toString().trim() || normalizedCommuneName;
+  const normalizedExerciseYear = (options?.exerciseYear || '').toString().trim() || null;
+
+  return {
+    communeId: normalizedCommuneId,
+    communeName: normalizedCommuneName,
+    exerciseYear: normalizedExerciseYear,
+    chap: options?.chap || null,
+    art: options?.art || null,
+    prog: options?.prog || null,
+    proj: options?.proj || null,
+    ligne: options?.ligne || null
+  };
+}
+
 function computeMonthlyNetTotalFromRows(rows, year, month, rcarAgeLimit) {
   const reportRows = Array.isArray(rows) ? rows : [];
   const ranges = getMonthHalfRanges(year, month);
@@ -110,6 +145,7 @@ function computeMonthlyNetTotalFromRows(rows, year, month, rcarAgeLimit) {
 }
 
 function resolveBordereauGenerationData({ year, month, reportRows, options }) {
+  // info1: Montant du présent bordereau
   const currentNetTotal = roundMoney(
     computeMonthlyNetTotalFromRows(reportRows, year, month, options?.rcarAgeLimit)
   );
@@ -118,18 +154,47 @@ function resolveBordereauGenerationData({ year, month, reportRows, options }) {
     throw new Error('Aucune donnée de paie pour cette période');
   }
 
-  const explicitReportPrevious = readOptionalMoney(options?.reportPreviousBordereau);
-  const reportPrevious = explicitReportPrevious === null
-    ? bordereauStore.getPreviousTotalGeneral(year, month)
-    : Math.max(0, explicitReportPrevious);
+  const bordereauScope = buildBordereauScope(options);
+  const previousPeriod = bordereauStore.getPreviousPeriod(year, month);
+  let previousLookupDebug = null;
 
+  // info2: Report du bordereau précédent (strictly previous calendar month, same scope).
+  const previousMonthBordereau = bordereauStore.getPreviousMonthBordereau(
+    year,
+    month,
+    bordereauScope,
+    null,
+    {
+      onDebug: (debugPayload) => {
+        previousLookupDebug = debugPayload;
+      }
+    }
+  );
+  const reportPrevious = bordereauStore.computeCarryOver(previousMonthBordereau);
+
+  // info3: Montant rejeté du présent bordereau
   const rejectedAmount = readNonNegativeMoney(options?.rejectedAmount, 0);
-  const explicitAdmittedAmount = readOptionalMoney(options?.admittedAmount);
-  const admittedAmount = explicitAdmittedAmount === null
-    ? roundMoney(Math.max(currentNetTotal - rejectedAmount, 0))
-    : Math.max(0, explicitAdmittedAmount);
+  const admittedAmount = currentNetTotal;
 
-  const totalGeneral = roundMoney(reportPrevious + currentNetTotal - rejectedAmount);
+  // Total Général cumulatif = previous Total Général + current present total
+  const totalGeneral = bordereauStore.computeCumulativeTotalGeneral(currentNetTotal, previousMonthBordereau);
+
+  if (previousLookupDebug) {
+    console.log(
+      `[bordereau] current=${year}/${month} previous=${previousPeriod.year}/${previousPeriod.month} ` +
+      `keys=${JSON.stringify(bordereauScope)} found=${!!previousMonthBordereau} ` +
+      `previous_total_general=${previousMonthBordereau?.totalGeneral ?? 0}`
+    );
+    console.log(
+      `[bordereau] lookup_sql=${previousLookupDebug.sql.replace(/\s+/g, ' ').trim()} ` +
+      `params=${JSON.stringify(previousLookupDebug.params)}`
+    );
+  }
+
+  console.log(
+    `[bordereau] present_total=${currentNetTotal} report_precedent=${reportPrevious} total_general=${totalGeneral}`
+  );
+
   const resolvedOptions = {
     ...options,
     reportPreviousBordereau: reportPrevious,
@@ -139,6 +204,7 @@ function resolveBordereauGenerationData({ year, month, reportRows, options }) {
 
   return {
     options: resolvedOptions,
+    scope: bordereauScope,
     presentAmount: currentNetTotal,
     admittedAmount,
     reportPrevious,
@@ -309,6 +375,7 @@ async function generateMonthlyDocument(documentType, workerId, year, month) {
     bordereauStore.upsertMonthlyTotals({
       year,
       month,
+      scope: bordereauData.scope,
       presentAmount: bordereauData.presentAmount,
       admittedAmount: bordereauData.admittedAmount,
       reportPrevious: bordereauData.reportPrevious,
@@ -431,6 +498,7 @@ async function generateMonthlyDocumentBatch(documentType, year, month, outputDir
       bordereauStore.upsertMonthlyTotals({
         year,
         month,
+        scope: bordereauData.scope,
         presentAmount: bordereauData.presentAmount,
         admittedAmount: bordereauData.admittedAmount,
         reportPrevious: bordereauData.reportPrevious,

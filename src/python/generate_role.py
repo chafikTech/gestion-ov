@@ -1088,11 +1088,8 @@ def draw_role_docx(payload: Dict[str, Any], docx_path: str) -> None:
                 p1.paragraph_format.space_after = Pt(0)
                 r1 = p1.add_run(f"CIN N°: {cin_value}" if cin_value else "")
                 r1.font.size = Pt(8)
-                p2 = cin_cell.add_paragraph()
-                p2.alignment = WD_ALIGN_PARAGRAPH.LEFT
-                p2.paragraph_format.space_before = Pt(0)
-                p2.paragraph_format.space_after = Pt(0)
-                r2 = p2.add_run(f"AU : {cin_validite}" if cin_validite else "AU :")
+                r1.add_break()
+                r2 = p1.add_run(f"AU : {cin_validite}" if cin_validite else "AU :")
                 r2.font.size = Pt(8)
 
         add_summary_row("TOTAL :", totals)

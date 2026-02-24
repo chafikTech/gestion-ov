@@ -9,9 +9,7 @@ const DB_KEYS = {
   prog: 'ref_prog',
   proj: 'ref_proj',
   ligne: 'ref_ligne',
-  rcarAgeLimit: 'rcar_age_limit',
-  decisionNumber: 'decision_number',
-  decisionDate: 'decision_date'
+  rcarAgeLimit: 'rcar_age_limit'
 };
 
 function getDefaultSettings() {
@@ -22,9 +20,7 @@ function getDefaultSettings() {
     prog: (REFERENCE_VALUES?.programme || '').toString().trim(),
     proj: (REFERENCE_VALUES?.projet || '').toString().trim(),
     ligne: (REFERENCE_VALUES?.ligne || '').toString().trim(),
-    rcarAgeLimit: RCAR_AGE_LIMIT,
-    decisionNumber: '02/2024',
-    decisionDate: '02/02/2024'
+    rcarAgeLimit: RCAR_AGE_LIMIT
   };
 }
 
@@ -85,12 +81,6 @@ function getAppSettings() {
         }
         break;
       }
-      case DB_KEYS.decisionNumber:
-        settings.decisionNumber = String(row.value || '').trim();
-        break;
-      case DB_KEYS.decisionDate:
-        settings.decisionDate = String(row.value || '').trim();
-        break;
       default:
         break;
     }
@@ -113,9 +103,7 @@ function saveAppSettings(input = {}) {
     prog: normalizeOptionalString(input.prog),
     proj: normalizeOptionalString(input.proj),
     ligne: normalizeOptionalString(input.ligne),
-    rcarAgeLimit: normalizeOptionalInt(input.rcarAgeLimit, { min: 0, max: 120 }),
-    decisionNumber: normalizeOptionalString(input.decisionNumber),
-    decisionDate: normalizeOptionalString(input.decisionDate)
+    rcarAgeLimit: normalizeOptionalInt(input.rcarAgeLimit, { min: 0, max: 120 })
   };
 
   const upserts = [];

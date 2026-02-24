@@ -49,7 +49,14 @@ const config = {
         footerText: 'Document officiel généré automatiquement',
 
         // Date format
-        dateFormat: 'DD/MM/YYYY' // Options: 'DD/MM/YYYY', 'YYYY-MM-DD', etc.
+        dateFormat: 'DD/MM/YYYY', // Options: 'DD/MM/YYYY', 'YYYY-MM-DD', etc.
+
+        // CERTIFICAT DE PAIEMENT decision reference (managed in code/config, not user input)
+        // Use "{year}" placeholder for automatic yearly update.
+        certificatPaiementDecision: {
+            number: '2/{year}',
+            date: '1/2/{year}'
+        }
     },
 
     // RCAR settings (required for quarterly forms)

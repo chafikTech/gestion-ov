@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node scripts/run-electron.js .",
     "dev": "node scripts/run-electron.js . --dev",
+    "test": "node --test test/backend/bordereauStore.test.js",
     "build:py": "node scripts/build-python-backend.js",
     "copy:py": "node scripts/copy-python-backend.js",
     "build:all": "npm run build:py && npm run copy:py",

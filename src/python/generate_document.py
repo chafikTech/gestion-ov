@@ -755,8 +755,13 @@ def generate_certificat_paiement_docx(payload: Dict[str, Any], docx_path: str) -
     amount_words = f"{words} dhs {cents_str} Cts"
 
     regisseur_name = str(options.get("regisseurName") or "MAJDA TAKNOUTI").strip() or "MAJDA TAKNOUTI"
-    decision_number = str(options.get("decisionNumber") or "02/2024").strip() or "02/2024"
-    decision_date = str(options.get("decisionDate") or "02/02/2024").strip() or "02/02/2024"
+    decision_number = str(options.get("decisionNumber") or "").strip()
+    decision_date = str(options.get("decisionDate") or "").strip()
+    if not decision_number or not decision_date:
+        raise ValueError(
+            "Missing CERTIFICAT DE PAIEMENT decision reference in configuration "
+            "(decision number/date)."
+        )
     document_date = str(options.get("documentDate") or "........................").strip() or "........................"
     exercise_year = str(options.get("exerciseYear") or year).strip() or str(year)
 
@@ -1593,11 +1598,19 @@ def generate_bordereau_docx(payload: Dict[str, Any], docx_path: str) -> None:
         bord_amount = fmt_amount_fr_comma(range_net)
         bord_words = amount_to_words_dhs_cents(range_net)
 
-        admitted = float(options.get("admittedAmount") or max(range_net - rejected_amount, 0))
+        admitted_raw = options.get("admittedAmount")
+        if admitted_raw in (None, ""):
+            admitted = range_net
+        else:
+            try:
+                admitted = float(admitted_raw)
+            except Exception:
+                admitted = range_net
+        admitted = max(round2(admitted), 0.0)
         admitted_amount = fmt_amount_fr_comma(admitted)
         rejected_amount_s = fmt_amount_fr_comma(rejected_amount)
         report_previous_s = fmt_amount_fr_comma(report_previous)
-        total_general = report_previous + range_net - rejected_amount
+        total_general = report_previous + range_net
         total_general_s = fmt_amount_fr_comma(total_general)
         total_general_words = amount_to_words_dhs_cents(total_general)
 

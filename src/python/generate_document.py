@@ -2322,12 +2322,12 @@ def _generate_rcar_docx(
     rp = p_period.add_run(period_text)
     rp.font.size = Pt(12)
 
-    col_w = [68.0, 16.0, 16.0, 22.0, 24.0, 20.0, 20.0]
+    col_w = [55.0, 13.0, 13.0, 18.0, 22.0, 22.0, 22.0]
     state_tbl = add_table_with_widths(doc, cols=7, col_widths_mm=col_w)
     state_tbl.alignment = WD_TABLE_ALIGNMENT.CENTER
     set_table_fixed_layout(state_tbl, col_w)
     set_table_borders(state_tbl, sz=4)
-    set_table_cell_margins(state_tbl, top_mm=0.25, bottom_mm=0.25, left_mm=0.6, right_mm=0.6)
+    set_table_cell_margins(state_tbl, top_mm=0.3, bottom_mm=0.3, left_mm=0.3, right_mm=0.3)
 
     headers = [
         "Nom et prénom",
@@ -2390,26 +2390,63 @@ def _generate_rcar_docx(
     total_row = state_tbl.add_row()
     total_row.height = Mm(7.0)
     total_row.height_rule = WD_ROW_HEIGHT_RULE.EXACTLY
-    totals_values = [
-        "TOTAUX",
-        "",
-        fmt_days(total_days),
-        "",
-        fmt_amount_fr(total_brut),
-        fmt_amount_fr(total_prelev),
-        fmt_amount_fr(total_versement),
-    ]
-    for idx, value in enumerate(totals_values):
-        c = total_row.cells[idx]
-        c.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-        c.text = ""
-        p = c.paragraphs[0]
-        p.alignment = WD_ALIGN_PARAGRAPH.CENTER if idx in (0, 1, 2) else WD_ALIGN_PARAGRAPH.RIGHT
-        p.paragraph_format.space_before = Pt(0)
-        p.paragraph_format.space_after = Pt(0)
-        rr = p.add_run(value)
-        rr.bold = True
-        rr.font.size = Pt(10)
+    
+    # Merge first 3 cells for "TOTAUX"
+    c0 = total_row.cells[0]
+    c1 = total_row.cells[1]
+    c2 = total_row.cells[2]
+    c0.merge(c2)
+    
+    c0.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+    c0.text = ""
+    p0 = c0.paragraphs[0]
+    p0.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p0.paragraph_format.space_before = Pt(0)
+    p0.paragraph_format.space_after = Pt(0)
+    r0 = p0.add_run("TOTAUX")
+    r0.bold = True
+    r0.font.size = Pt(10)
+    
+    # Column 3 (index 3): empty
+    c3 = total_row.cells[3]
+    c3.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+    c3.text = ""
+    
+    # Column 4 (index 4): total brut
+    c4 = total_row.cells[4]
+    c4.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+    c4.text = ""
+    p4 = c4.paragraphs[0]
+    p4.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    p4.paragraph_format.space_before = Pt(0)
+    p4.paragraph_format.space_after = Pt(0)
+    r4 = p4.add_run(fmt_amount_fr(total_brut))
+    r4.bold = True
+    r4.font.size = Pt(10)
+    
+    # Column 5 (index 5): total prélèvement
+    c5 = total_row.cells[5]
+    c5.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+    c5.text = ""
+    p5 = c5.paragraphs[0]
+    p5.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    p5.paragraph_format.space_before = Pt(0)
+    p5.paragraph_format.space_after = Pt(0)
+    r5 = p5.add_run(fmt_amount_fr(total_prelev))
+    r5.bold = True
+    r5.font.size = Pt(10)
+    
+    # Column 6 (index 6): total versement
+    c6 = total_row.cells[6]
+    c6.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+    c6.text = ""
+    p6 = c6.paragraphs[0]
+    p6.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    p6.paragraph_format.space_before = Pt(0)
+    p6.paragraph_format.space_after = Pt(0)
+    r6 = p6.add_run(fmt_amount_fr(total_versement))
+    r6.bold = True
+    r6.font.size = Pt(10)
 
     p_words = doc.add_paragraph()
     p_words.alignment = WD_ALIGN_PARAGRAPH.LEFT

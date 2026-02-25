@@ -407,9 +407,7 @@ async function generateQuarterlyDocument(documentType, workerId, year, quarter) 
   const report = buildQuarterlyReport(year, quarter, appSettings.rcarAgeLimit);
 
   const generatorOptions = buildGeneratorOptions();
-  const reportForDoc = documentType === 'rcar-salariale'
-    ? { ...report, rows: report.eligibleRows || [] }
-    : report;
+  const reportForDoc = report;
 
   const py = await generateWithPython({ documentType, year, quarter, report: reportForDoc, options: generatorOptions });
   return {
@@ -626,7 +624,7 @@ async function generateQuarterlyCombinedPair(report, year, quarter, outputDir, o
   const results = [];
 
   const docs = [
-    { id: 'rcar-salariale', report: { ...report, rows: report.eligibleRows || [] } },
+    { id: 'rcar-salariale', report },
     { id: 'rcar-patronale', report }
   ];
 
